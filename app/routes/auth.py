@@ -68,3 +68,29 @@ def require_admin(user: User = Depends(get_current_user)):
             detail="Admin access required",
         )
     return user
+
+@router.post("/register", response_model=UserResponse, status_code=201)
+def register(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+):
+    existing = db.query(User).filter(
+        User.username == data.username
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="Username already exists",
+        )
+
+    user = User(
+        username=data.username,
+        hashed_password=password_hash.hash(data.password),
+        role="user",
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
