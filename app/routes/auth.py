@@ -116,3 +116,6 @@ def login(
         "access_token": create_access_token(user.username),
         "token_type": "bearer",
     }
+@router.get("/me", response_model=UserResponse)
+def read_me(user: User = Depends(get_current_user)):
+    return user
