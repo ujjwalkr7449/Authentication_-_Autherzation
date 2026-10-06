@@ -37,3 +37,27 @@ def create_access_token(username: str):
     )
     payload = {"sub": username, "exp": expires}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+):
+    unauthorized = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if not username:
+            raise unauthorized
+    except InvalidTokenError:
+        raise unauthorized
+
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        raise unauthorized
+
+    return user
