@@ -24,9 +24,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+def create_access_token(username: str):
+    expires = datetime.now(timezone.utc) + timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    payload = {"sub": username, "exp": expires}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
